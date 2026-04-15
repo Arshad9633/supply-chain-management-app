@@ -1,13 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../services/api";
 
-export default function SupplierForm({ onSupplierAdded }) {
+export default function SupplierForm({
+  onSupplierSaved,
+  selectedSupplier,
+  clearSelection,
+}) {
   const [formData, setFormData] = useState({
     supplierName: "",
     country: "",
     leadTimeDays: "",
     rating: "",
   });
+
+  useEffect(() => {
+    if (selectedSupplier) {
+      setFormData({
+        supplierName: selectedSupplier.supplierName || "",
+        country: selectedSupplier.country || "",
+        leadTimeDays: selectedSupplier.leadTimeDays || "",
+        rating: selectedSupplier.rating || "",
+      });
+    } else {
+      setFormData({
+        supplierName: "",
+        country: "",
+        leadTimeDays: "",
+        rating: "",
+      });
+    }
+  }, [selectedSupplier]);
 
   const handleChange = (e) => {
     setFormData({
@@ -16,28 +38,43 @@ export default function SupplierForm({ onSupplierAdded }) {
     });
   };
 
+  const resetForm = () => {
+    setFormData({
+      supplierName: "",
+      country: "",
+      leadTimeDays: "",
+      rating: "",
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const payload = {
+      supplierName: formData.supplierName,
+      country: formData.country,
+      leadTimeDays: Number(formData.leadTimeDays),
+      rating: Number(formData.rating),
+    };
+
     try {
-      await api.post("/suppliers", {
-        supplierName: formData.supplierName,
-        country: formData.country,
-        leadTimeDays: Number(formData.leadTimeDays),
-        rating: Number(formData.rating),
-      });
+      if (selectedSupplier) {
+        await api.put(`/suppliers/${selectedSupplier.id}`, payload);
+      } else {
+        await api.post("/suppliers", payload);
+      }
 
-      setFormData({
-        supplierName: "",
-        country: "",
-        leadTimeDays: "",
-        rating: "",
-      });
-
-      onSupplierAdded();
+      resetForm();
+      clearSelection();
+      onSupplierSaved();
     } catch (error) {
-      console.error("Error adding supplier:", error);
+      console.error("Error saving supplier:", error);
     }
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    clearSelection();
   };
 
   return (
@@ -87,7 +124,17 @@ export default function SupplierForm({ onSupplierAdded }) {
         />
       </div>
 
-      <button type="submit">Add Supplier</button>
+      <div className="button-group">
+        <button type="submit">
+          {selectedSupplier ? "Update Supplier" : "Add Supplier"}
+        </button>
+
+        {selectedSupplier && (
+          <button type="button" className="secondary-btn" onClick={handleCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   );
 }
