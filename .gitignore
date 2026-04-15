@@ -1,0 +1,19 @@
+# Node
+node_modules/
+dist/
+build/
+
+# Java / Maven
+target/
+*.log
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
