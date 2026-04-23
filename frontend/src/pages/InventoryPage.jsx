@@ -6,6 +6,7 @@ import InventoryList from "../components/InventoryList";
 export default function InventoryPage() {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState([]);
+  const [selectedInventory, setSelectedInventory] = useState(null);
 
   const fetchInventory = async () => {
     try {
@@ -30,16 +31,39 @@ export default function InventoryPage() {
     fetchProducts();
   }, []);
 
+  const handleEdit = (item) => {
+    setSelectedInventory(item);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/inventory/${id}`);
+      fetchInventory();
+
+      if (selectedInventory && selectedInventory.id === id) {
+        setSelectedInventory(null);
+      }
+    } catch (err) {
+      console.error("Error deleting inventory:", err);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedInventory(null);
+  };
+
   return (
     <div className="page-container">
       <h1 className="page-title">Inventory</h1>
 
       <div className="supplier-layout">
         <div className="card">
-          <h2>Add Inventory</h2>
+          <h2>{selectedInventory ? "Edit Inventory" : "Add Inventory"}</h2>
           <InventoryForm
             products={products}
-            onInventoryAdded={fetchInventory}
+            selectedInventory={selectedInventory}
+            clearSelection={clearSelection}
+            onInventorySaved={fetchInventory}
           />
         </div>
 
@@ -48,6 +72,8 @@ export default function InventoryPage() {
           <InventoryList
             inventory={inventory}
             products={products}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
       </div>

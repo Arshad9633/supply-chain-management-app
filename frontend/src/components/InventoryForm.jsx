@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../services/api";
 
-export default function InventoryForm({ products, onInventoryAdded }) {
+export default function InventoryForm({
+  products,
+  selectedInventory,
+  clearSelection,
+  onInventorySaved,
+}) {
   const [formData, setFormData] = useState({
     productId: "",
     warehouseId: "",
@@ -10,6 +15,25 @@ export default function InventoryForm({ products, onInventoryAdded }) {
   });
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (selectedInventory) {
+      setFormData({
+        productId: selectedInventory.productId || "",
+        warehouseId: selectedInventory.warehouseId ?? "",
+        stockLevel: selectedInventory.stockLevel ?? "",
+        reorderThreshold: selectedInventory.reorderThreshold ?? "",
+      });
+    } else {
+      setFormData({
+        productId: "",
+        warehouseId: "",
+        stockLevel: "",
+        reorderThreshold: "",
+      });
+    }
+    setErrors({});
+  }, [selectedInventory]);
 
   const validate = () => {
     const newErrors = {};
@@ -57,13 +81,19 @@ export default function InventoryForm({ products, onInventoryAdded }) {
 
     if (!validate()) return;
 
+    const payload = {
+      productId: formData.productId,
+      warehouseId: Number(formData.warehouseId),
+      stockLevel: Number(formData.stockLevel),
+      reorderThreshold: Number(formData.reorderThreshold),
+    };
+
     try {
-      await api.post("/inventory", {
-        productId: formData.productId,
-        warehouseId: Number(formData.warehouseId),
-        stockLevel: Number(formData.stockLevel),
-        reorderThreshold: Number(formData.reorderThreshold),
-      });
+      if (selectedInventory) {
+        await api.put(`/inventory/${selectedInventory.id}`, payload);
+      } else {
+        await api.post("/inventory", payload);
+      }
 
       setFormData({
         productId: "",
@@ -73,10 +103,15 @@ export default function InventoryForm({ products, onInventoryAdded }) {
       });
 
       setErrors({});
-      onInventoryAdded();
+      clearSelection();
+      onInventorySaved();
     } catch (err) {
-      console.error("Error adding inventory:", err);
+      console.error("Error saving inventory:", err);
     }
+  };
+
+  const handleCancel = () => {
+    clearSelection();
   };
 
   return (
@@ -137,7 +172,17 @@ export default function InventoryForm({ products, onInventoryAdded }) {
         )}
       </div>
 
-      <button type="submit">Add Inventory</button>
+      <div className="button-group">
+        <button type="submit">
+          {selectedInventory ? "Update Inventory" : "Add Inventory"}
+        </button>
+
+        {selectedInventory && (
+          <button type="button" className="secondary-btn" onClick={handleCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   );
 }
