@@ -4,36 +4,78 @@ import api from "../services/api";
 export default function InventoryForm({ products, onInventoryAdded }) {
   const [formData, setFormData] = useState({
     productId: "",
-    location: "",
-    quantity: "",
+    warehouseId: "",
+    stockLevel: "",
+    reorderThreshold: "",
   });
+
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.productId) {
+      newErrors.productId = "Product is required";
+    }
+
+    if (formData.warehouseId === "") {
+      newErrors.warehouseId = "Warehouse ID is required";
+    } else if (Number(formData.warehouseId) < 0) {
+      newErrors.warehouseId = "Warehouse ID cannot be negative";
+    }
+
+    if (formData.stockLevel === "") {
+      newErrors.stockLevel = "Stock level is required";
+    } else if (Number(formData.stockLevel) < 0) {
+      newErrors.stockLevel = "Stock level cannot be negative";
+    }
+
+    if (formData.reorderThreshold === "") {
+      newErrors.reorderThreshold = "Reorder threshold is required";
+    } else if (Number(formData.reorderThreshold) < 0) {
+      newErrors.reorderThreshold = "Reorder threshold cannot be negative";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    setErrors((prev) => ({
+      ...prev,
+      [e.target.name]: "",
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!validate()) return;
+
     try {
       await api.post("/inventory", {
         productId: formData.productId,
-        location: formData.location,
-        quantity: Number(formData.quantity),
+        warehouseId: Number(formData.warehouseId),
+        stockLevel: Number(formData.stockLevel),
+        reorderThreshold: Number(formData.reorderThreshold),
       });
 
       setFormData({
         productId: "",
-        location: "",
-        quantity: "",
+        warehouseId: "",
+        stockLevel: "",
+        reorderThreshold: "",
       });
 
+      setErrors({});
       onInventoryAdded();
     } catch (err) {
-      console.error(err);
+      console.error("Error adding inventory:", err);
     }
   };
 
@@ -41,7 +83,12 @@ export default function InventoryForm({ products, onInventoryAdded }) {
     <form onSubmit={handleSubmit}>
       <div className="form-group">
         <label>Product</label>
-        <select name="productId" value={formData.productId} onChange={handleChange}>
+        <select
+          name="productId"
+          value={formData.productId}
+          onChange={handleChange}
+          className={errors.productId ? "input-error" : ""}
+        >
           <option value="">Select Product</option>
           {products.map((p) => (
             <option key={p.id} value={p.id}>
@@ -49,25 +96,45 @@ export default function InventoryForm({ products, onInventoryAdded }) {
             </option>
           ))}
         </select>
+        {errors.productId && <p className="error-text">{errors.productId}</p>}
       </div>
 
       <div className="form-group">
-        <label>Location</label>
-        <input
-          name="location"
-          value={formData.location}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Quantity</label>
+        <label>Warehouse ID</label>
         <input
           type="number"
-          name="quantity"
-          value={formData.quantity}
+          name="warehouseId"
+          value={formData.warehouseId}
           onChange={handleChange}
+          className={errors.warehouseId ? "input-error" : ""}
         />
+        {errors.warehouseId && <p className="error-text">{errors.warehouseId}</p>}
+      </div>
+
+      <div className="form-group">
+        <label>Stock Level</label>
+        <input
+          type="number"
+          name="stockLevel"
+          value={formData.stockLevel}
+          onChange={handleChange}
+          className={errors.stockLevel ? "input-error" : ""}
+        />
+        {errors.stockLevel && <p className="error-text">{errors.stockLevel}</p>}
+      </div>
+
+      <div className="form-group">
+        <label>Reorder Threshold</label>
+        <input
+          type="number"
+          name="reorderThreshold"
+          value={formData.reorderThreshold}
+          onChange={handleChange}
+          className={errors.reorderThreshold ? "input-error" : ""}
+        />
+        {errors.reorderThreshold && (
+          <p className="error-text">{errors.reorderThreshold}</p>
+        )}
       </div>
 
       <button type="submit">Add Inventory</button>

@@ -12,7 +12,7 @@ export default function InventoryPage() {
       const res = await api.get("/inventory");
       setInventory(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching inventory:", err);
     }
   };
 
@@ -21,7 +21,7 @@ export default function InventoryPage() {
       const res = await api.get("/products");
       setProducts(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching products:", err);
     }
   };
 
